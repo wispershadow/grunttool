@@ -1,0 +1,5 @@
+package org.wispersd.common.tools.jsutilties;
+
+public enum LineTypes {
+	NORMAL_LINE, COMPRESSGROUP_LINE, COMPRESSGROUP_START, COMPRESSGROUP_END, COMMENTLINE_START, COMMENTLINE_END
+}

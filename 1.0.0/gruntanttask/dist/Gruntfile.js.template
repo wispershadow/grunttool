@@ -1,0 +1,47 @@
+module.exports = function (grunt) {
+	grunt.initConfig({
+		pkg: grunt.file.readJSON('package.json'),
+		#if ($cssCompressGroup) 
+		cssmin: {
+			options: {
+				shorthandCompacting: false,
+				roundingPrecision: -1
+			},
+			target: {
+				files: {
+					#set($i = 0)
+					#foreach($nextCompressGroup in $cssCompressGroup.getCompressGroups())
+						#set($k = 0)
+						#if ($i > 0),#end 'dist/${nextCompressGroup.groupName}.min.css':[#foreach($nextitem in $nextCompressGroup.itemList) #if ($k > 0),#end '$nextitem' #set($k = $k+1)#end] 
+						#set($i = $i+1)
+					#end
+				}
+			}
+		}
+		#end
+		#if ($cssCompressGroup && $jsCompressGroup)	
+		,
+		#end
+		#if ($jsCompressGroup)	
+		uglify: {
+			options: {
+			},
+			my_target: {
+				files: {
+					#set($i = 0)
+					#foreach($nextCompressGroup in $jsCompressGroup.getCompressGroups())
+						#set($k = 0)
+						#if ($i > 0),#end 'dist/${nextCompressGroup.groupName}.min.js':[#foreach($nextitem in $nextCompressGroup.itemList) #if ($k > 0),#end '$nextitem' #set($k = $k+1)#end] 
+						#set($i = $i+1)
+					#end
+				}
+			}
+		}
+		#end	
+	});
+	grunt.loadNpmTasks('grunt-contrib-cssmin');
+	grunt.loadNpmTasks('grunt-contrib-uglify');
+	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.registerTask('default', [#if ($cssCompressGroup) 'cssmin' #end  #if ($cssCompressGroup && $jsCompressGroup),#end #if ($jsCompressGroup) 'uglify' #end]);
+	
+}

@@ -1,0 +1,94 @@
+<project name="grunt">
+	<property name="grunt.home" location="."/>
+	<property name="project.dir" location="."/>
+	<property name="platformhome" location="C:/hybris/57/hybris"/>
+	<property name="web.root" location="${platformhome}/bin/ext-template/yacceleratorstorefront/web/webroot"/>
+
+	
+	<property file="${grunt.home}/minifytask.properties"/>
+	
+	<taskdef resource="net/sf/antcontrib/antlib.xml" classpath="${platformhome}/bin/platform/lib/ant-contrib-1.0b3.jar" />
+	
+	<macrodef name="exec-node">
+		<attribute name="gruntdir" description="grunt home directory"/>
+		<attribute name="module" description="The name of the NodeJS module to execute"/>
+		<attribute name="failonerror" default="true" description="Fail if the exit code is not 0"/>
+		<element name="args" implicit="yes" description="Argument to pass to the exec task"/>
+		<sequential>
+			<exec executable="cmd.exe" failonerror="@{failonerror}" osfamily="winnt">
+				<arg line="/c  cd @{gruntdir} &amp; @{module}" />
+				<args/>
+
+				<!-- Windows cmd output workaround: http://stackoverflow.com/a/10359327/227349 -->
+				<!-- Forces node's stderror and stdout to a temporary file -->
+				<arg line=" &gt; _tempfile.out 2&lt;&amp;1"/>
+
+				<!-- If command exits with an error, then output the temporary file        -->
+				<!-- to stdout delete the temporary file and finally exit with error level 1  -->
+				<!-- so that the apply task can catch the error if @failonerror="true"        -->
+				<arg line=" || (type _tempfile.out &amp; del _tempfile.out &amp; exit /b 1)"/>
+
+				<!-- Otherwise, just type the temporary file and delete it-->
+				<arg line=" &amp; type _tempfile.out &amp; del _tempfile.out &amp;"/>
+			</exec>
+			<exec executable="/bin/sh" failonerror="@{failonerror}" osfamily="unix">
+				 <arg value="-c"/>
+				 <!-- arg value="cd @{gruntdir}; ./executable.sh"/ -->
+				 <arg value="cd @{gruntdir};" />
+			</exec>
+			<exec executable="@{module}" failonerror="@{failonerror}" osfamily="unix">
+				<args/>
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<path id="compresstask.lib">
+		<fileset dir="${grunt.home}/task/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	
+	<taskdef name="tag-analyze" classname="org.wispersd.common.tools.tasks.TagAnalyzeTask" classpathref="compresstask.lib" loaderref="compresstask.lib.loader">
+	</taskdef>
+	
+	<taskdef name="grunt-filegen" classname="org.wispersd.common.tools.tasks.GruntFileGenTask" classpathref="compresstask.lib" loaderref="compresstask.lib.loader">
+	</taskdef>
+	
+	<taskdef name="tag-modify" classname="org.wispersd.common.tools.tasks.TagFileModifyTask" classpathref="compresstask.lib" loaderref="compresstask.lib.loader">
+	</taskdef>
+	
+	<typedef name="placeholderRef" classname="org.wispersd.common.tools.tasks.PlaceholderRef" classpathref="compresstask.lib"></typedef>
+	<typedef name="outputPathMapping" classname="org.wispersd.common.tools.tasks.OutputPathMapping" classpathref="compresstask.lib"></typedef>
+	
+	<fileset id="cssfileset" dir="${web.root}/WEB-INF/tags/desktop/template/compressible">
+		<include name="css.tag"/>
+	</fileset>
+	
+	<fileset id="jsfileset" dir="${web.root}/WEB-INF/tags/desktop/template/compressible">
+		<include name="js.tag"/>
+	</fileset>
+	
+	
+	<target name="storefrontcompression" description="Parse js, css tag file to find out compression group">
+		<tag-analyze>
+			<cssFiles refid="cssfileset"/>
+			<jsFiles refid="jsfileset"/>
+			<placeholderRef name="commonpath.commonResourcePath" ref="${web.root}/_ui/desktop/common"/>
+			<placeholderRef name="commonpath.themeResourcePath" ref="${web.root}/_ui/desktop/theme-black"/>
+		</tag-analyze>
+		<grunt-filegen/>
+		<delete>
+			<fileset dir="${grunt.home}/dist"/>
+		</delete>
+		<exec-node module="grunt" gruntdir="${grunt.home}">
+			<arg value=""/>
+		</exec-node>
+		<tag-modify sourcePath="${grunt.home}/dist/">
+			<cssFiles refid="cssfileset"/>
+			<jsFiles refid="jsfileset"/>
+			<outputPathMapping groupName="cssgroup1" displayPrefix="${commonResourcePath}/css/" outputPath="${web.root}/_ui/desktop/common/css/"/>
+			<outputPathMapping groupName="jsgroup1" displayPrefix="${commonResourcePath}/js/" outputPath="${web.root}/_ui/desktop/common/js/"/>
+			<outputPathMapping groupName="jsgroup2" displayPrefix="${commonResourcePath}/js/" outputPath="${web.root}/_ui/desktop/common/js/"/>
+		</tag-modify>
+	</target>
+</project>
