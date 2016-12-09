@@ -39,7 +39,7 @@ public class ParseUtils {
 	
 	
 	public static boolean isCommentEnd(String curLine) {
-		return curLine.startsWith(HTML_COMMENTEND) || curLine.startsWith(JSP_COMMENTEND);
+		return curLine.endsWith(HTML_COMMENTEND) || curLine.endsWith(JSP_COMMENTEND);
 	}
 	
 	public static boolean isGroupStart(String curLine, Properties p) {
